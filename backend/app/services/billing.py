@@ -35,6 +35,16 @@ class BillingService:
         stripe.api_key = get_settings().stripe_api_key
         return stripe.checkout.Session.create(mode="subscription", line_items=[{"price": plan.stripe_price_id, "quantity": 1}], success_url="http://localhost:3000/billing/success", cancel_url="http://localhost:3000/billing/cancel", metadata={"subject_id": user.subject_id}, client_reference_id=user.subject_id)
 
+    def create_portal_session(self, subject_id: str):
+        subscription = self.subscriptions.get_by_subject(subject_id)
+        if not subscription or not subscription.stripe_customer_id:
+            raise HTTPException(status_code=400, detail="No Stripe customer record")
+        stripe.api_key = get_settings().stripe_api_key
+        return stripe.billing_portal.Session.create(
+            customer=subscription.stripe_customer_id,
+            return_url="http://localhost:4321/dashboard",
+        )
+
     def handle_subscription_event(self, event):
         obj = event["data"]["object"]
         if event["type"] == "checkout.session.completed":

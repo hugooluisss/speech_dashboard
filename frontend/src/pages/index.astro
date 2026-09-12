@@ -1,6 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
+export const prerender = true;
+
 const features = [
   ['01', 'Private by design', 'Recording and transcription run locally with faster-whisper. Your voice stays on your computer.'],
   ['02', 'Hands-free when you want', 'Say “hey speech” or “oye speech” to start dictating, then say “stop” or go quiet to paste.'],
@@ -10,7 +12,7 @@ const features = [
   ['06', 'Your vocabulary, your models', 'Bias transcription toward names and technical terms, and choose the model that fits your speed and accuracy needs.'],
 ];
 
-const loginUrl = 'http://localhost:8080/realms/speech/protocol/openid-connect/auth?client_id=speech-dashboard-web';
+const loginUrl = '/auth/login';
 ---
 
 <Layout>

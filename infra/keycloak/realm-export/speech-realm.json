@@ -21,6 +21,10 @@
       {
         "name": "plan-pro",
         "description": "Placeholder plan role; billing will define limits."
+      },
+      {
+        "name": "admin",
+        "description": "Access to read-only administrative dashboard surfaces."
       }
     ]
   },
@@ -108,6 +112,24 @@
       },
       "redirectUris": [],
       "webOrigins": [],
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email", "basic", "plan-roles"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
+    },
+    {
+      "clientId": "speech-dashboard-web",
+      "name": "Speech Dashboard Web",
+      "description": "Public browser client using Authorization Code with PKCE.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "bearerOnly": false,
+      "attributes": {"pkce.code.challenge.method": "S256"},
+      "redirectUris": ["http://localhost:4321/auth/callback", "https://dashboard.speech.app/auth/callback"],
+      "webOrigins": ["http://localhost:4321", "https://dashboard.speech.app"],
       "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email", "basic", "plan-roles"],
       "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     }

@@ -15,6 +15,7 @@ bearer = HTTPBearer(auto_error=False)
 class Claims:
     subject_id: str
     plan: str
+    admin: bool = False
 
 
 @lru_cache
@@ -24,12 +25,12 @@ def jwks_client(issuer: str) -> PyJWKClient:
 
 def extract_claims(payload: dict) -> Claims:
     subject_id = payload.get("sub")
-    roles = payload.get("plan", [])
+    roles = payload.get("plan") or payload.get("realm_access", {}).get("roles", [])
     roles = [roles] if isinstance(roles, str) else roles
     plan = next((role for role in roles if isinstance(role, str) and role.startswith("plan-")), None)
     if not subject_id or not plan:
         raise HTTPException(status_code=401, detail="Token is missing subject or plan")
-    return Claims(subject_id=subject_id, plan=plan)
+    return Claims(subject_id=subject_id, plan=plan, admin="admin" in roles)
 
 
 def validate_token(credentials: HTTPAuthorizationCredentials | None = Security(bearer)) -> Claims:

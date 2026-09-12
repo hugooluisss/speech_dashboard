@@ -17,3 +17,6 @@ class UserRepository:
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def list_all(self) -> list[User]:
+        return list(self.session.scalars(select(User).order_by(User.subject_id)))

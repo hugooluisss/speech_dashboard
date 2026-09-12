@@ -19,6 +19,13 @@ def checkout(plan_id: str, claims: Claims = Depends(validate_token)):
         return {"url": BillingService(PlanRepository(session), SubscriptionRepository(session)).create_checkout_session(user, plan_id).url}
 
 
+@router.post("/portal")
+def portal(claims: Claims = Depends(validate_token)):
+    with session_factory()() as session:
+        url = BillingService(PlanRepository(session), SubscriptionRepository(session)).create_portal_session(claims.subject_id).url
+    return {"url": url}
+
+
 @router.post("/webhook")
 async def webhook(request: Request):
     try:

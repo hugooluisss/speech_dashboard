@@ -1,0 +1,26 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { backend, getSession } from '../../lib/auth';
+
+const session = getSession(Astro.cookies)!;
+const headers = { Authorization: `Bearer ${session.accessToken}` };
+const [meResponse, usageResponse, plansResponse] = await Promise.all([
+  fetch(`${backend}/me`, { headers }), fetch(`${backend}/usage`, { headers }), fetch(`${backend}/plans`, { headers }),
+]);
+const me = await meResponse.json();
+const usage = await usageResponse.json();
+const plans = plansResponse.ok ? await plansResponse.json() : [];
+const upgradePlans = plans.filter((plan) => plan.tier_id !== me.plan);
+---
+<Layout title="Dashboard — Speech">
+  <main class="dashboard shell">
+    <nav class="dashboard-nav"><a class="wordmark" href="/"><span class="mark">S</span> speech</a><span>{me.subject_id}</span><a href="/auth/logout">Log out</a></nav>
+    <p class="eyebrow">Your dashboard</p>
+    <h1>{me.plan.replace('plan-', '')}</h1>
+    <section class="dashboard-grid">
+      <article><p class="eyebrow">Current period</p><strong>{usage.used.toLocaleString()} / {usage.limit.toLocaleString()}</strong><p>words used · {usage.remaining.toLocaleString()} remaining</p></article>
+      <article><p class="eyebrow">Billing</p><p>Change your plan or manage your payment details.</p><div class="actions"><form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label="Choose a plan">{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">Upgrade</button></form><a class="button button-secondary" href="/dashboard/portal">Manage billing</a></div></article>
+    </section>
+    <a href="/dashboard/admin">Admin dashboard</a>
+  </main>
+</Layout>

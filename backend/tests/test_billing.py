@@ -41,6 +41,23 @@ def test_checkout_sets_subject_metadata_and_rejects_unknown(monkeypatch):
         service.create_checkout_session(User(subject_id="u1"), "missing")
 
 
+def test_portal_requires_customer_and_returns_url(monkeypatch):
+    for key, value in {"DATABASE_URL": "sqlite://", "KEYCLOAK_ISSUER_URL": "http://keycloak/realms/speech", "KEYCLOAK_CLIENT_ID": "client", "KEYCLOAK_CLIENT_SECRET": "secret", "STRIPE_API_KEY": "sk_test_mock", "STRIPE_WEBHOOK_SECRET": "whsec_mock"}.items():
+        monkeypatch.setenv(key, value)
+    session = db()
+    session.add(UserSubscription(subject_id="u1", stripe_customer_id="cus_1", status="active", plan_tier_id="plan-pro"))
+    session.commit()
+    monkeypatch.setenv("STRIPE_API_KEY", "sk_test_mock")
+    def create_portal(**kwargs):
+        assert kwargs["customer"] == "cus_1"
+        return SimpleNamespace(url="https://billing.test")
+    monkeypatch.setattr("app.services.billing.stripe.billing_portal.Session.create", create_portal)
+    service = BillingService(PlanRepository(session), SubscriptionRepository(session), keycloak=SimpleNamespace())
+    assert service.create_portal_session("u1").url == "https://billing.test"
+    with pytest.raises(Exception):
+        service.create_portal_session("missing")
+
+
 def assert_metadata(kwargs):
     assert kwargs["metadata"] == {"subject_id": "u1"}
 
