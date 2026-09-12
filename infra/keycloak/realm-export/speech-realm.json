@@ -24,7 +24,6 @@
       }
     ]
   },
-  "defaultRoles": ["plan-free"],
   "clientScopes": [
     {
       "name": "plan-roles",
@@ -50,6 +49,17 @@
             "usermodel.client.role": "false",
             "usermodel.realm.role": "true"
           }
+        },
+        {
+          "name": "subject-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
         }
       ]
     }
@@ -70,7 +80,8 @@
       "bearerOnly": false,
       "redirectUris": [],
       "webOrigins": [],
-      "defaultClientScopes": ["plan-roles"]
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email", "basic", "plan-roles"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     },
     {
       "clientId": "speech-desktop-device",
@@ -89,7 +100,8 @@
       },
       "redirectUris": [],
       "webOrigins": [],
-      "defaultClientScopes": ["plan-roles"]
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email", "basic", "plan-roles"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     }
   ]
 }
