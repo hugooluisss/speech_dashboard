@@ -64,6 +64,14 @@
       ]
     }
   ],
+  "users": [
+    {
+      "username": "service-account-speech-dashboard-backend",
+      "enabled": true,
+      "serviceAccountClientId": "speech-dashboard-backend",
+      "clientRoles": {"realm-management": ["manage-users"]}
+    }
+  ],
   "clients": [
     {
       "clientId": "speech-dashboard-backend",

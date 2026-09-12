@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     keycloak_issuer_url: str
     keycloak_client_id: str
     keycloak_client_secret: str
+    stripe_api_key: str
+    stripe_webhook_secret: str
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
