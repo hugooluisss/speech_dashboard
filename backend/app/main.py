@@ -8,6 +8,7 @@ from app.controllers.me import router as me_router
 from app.controllers.plans import router as plans_router
 from app.controllers.billing import router as billing_router
 from app.controllers.usage import router as usage_router
+from app.controllers.transcription import router as transcription_router
 
 
 @asynccontextmanager
@@ -22,3 +23,4 @@ app.include_router(me_router)
 app.include_router(plans_router)
 app.include_router(billing_router)
 app.include_router(usage_router)
+app.include_router(transcription_router)

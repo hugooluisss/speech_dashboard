@@ -13,6 +13,8 @@ dependencies = [
   "httpx>=0.28,<1",
   "uvicorn[standard]>=0.34,<1",
   "stripe>=12,<14",
+  "faster-whisper>=1.2.1",
+  "python-multipart>=0.0.20,<1",
 ]
 
 [dependency-groups]
