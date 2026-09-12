@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -33,4 +33,15 @@ class UserSubscription(Base):
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True)
     status: Mapped[str] = mapped_column(String(64), nullable=False)
     plan_tier_id: Mapped[str] = mapped_column(String(64), nullable=False, default="plan-free")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class UsagePeriod(Base):
+    __tablename__ = "usage_periods"
+    __table_args__ = (UniqueConstraint("subject_id", "period_key"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    subject_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    period_key: Mapped[str] = mapped_column(String(7), nullable=False)
+    words_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
