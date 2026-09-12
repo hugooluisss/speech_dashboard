@@ -1,0 +1,95 @@
+{
+  "realm": "speech",
+  "enabled": true,
+  "displayName": "Speech",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "plan-free",
+        "description": "Placeholder plan role; billing will define limits."
+      },
+      {
+        "name": "plan-pro",
+        "description": "Placeholder plan role; billing will define limits."
+      }
+    ]
+  },
+  "defaultRoles": ["plan-free"],
+  "clientScopes": [
+    {
+      "name": "plan-roles",
+      "description": "Expose the user's plan role in the access token.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "plan-role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "plan",
+            "id.token.claim": "false",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "userinfo.token.claim": "false",
+            "usermodel.client.role": "false",
+            "usermodel.realm.role": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "speech-dashboard-backend",
+      "name": "Speech Dashboard Backend",
+      "description": "Confidential client for the server-side dashboard backend.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-only-speech-dashboard-backend-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "bearerOnly": false,
+      "redirectUris": [],
+      "webOrigins": [],
+      "defaultClientScopes": ["plan-roles"]
+    },
+    {
+      "clientId": "speech-desktop-device",
+      "name": "Speech Desktop Device Flow",
+      "description": "Public client for the speech app's OAuth2 Device Authorization Grant.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "bearerOnly": false,
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": "true"
+      },
+      "redirectUris": [],
+      "webOrigins": [],
+      "defaultClientScopes": ["plan-roles"]
+    }
+  ]
+}
