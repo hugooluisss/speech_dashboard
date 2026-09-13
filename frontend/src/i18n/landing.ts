@@ -1,0 +1,46 @@
+import { assertKeyParity } from './index';
+
+export const landing = {
+  en: {
+    mainNavigation: 'Main navigation', features: 'Features', pricing: 'Pricing', login: 'Log in',
+    heroEyebrow: 'Your voice, at the cursor', heroTitleA: 'Say it once.', heroTitleB: 'Keep moving.',
+    heroLead: 'Local dictation that pastes wherever you type. Fast, private, and ready when you are.',
+    download: 'Download Speech', signup: 'Sign up free', platforms: 'Windows · macOS · Linux  /  No account required for local dictation',
+    featuresEyebrow: 'The good kind of quiet', featuresTitle: 'Speech stays out of the way.',
+    featuresLead: 'Everything you need to turn thoughts into text, without sending your voice anywhere.',
+    feature1Title: 'Private by design', feature1Copy: 'Recording and transcription run locally with faster-whisper. Your voice stays on your computer.',
+    feature2Title: 'Hands-free when you want', feature2Copy: 'Say “hey speech” or “oye speech” to start dictating, then say “stop” or go quiet to paste.',
+    feature3Title: 'Works where you work', feature3Copy: 'Dictate into browsers, documents, chat apps, IDEs, and terminals.',
+    feature4Title: 'Speaks your language', feature4Copy: 'Use automatic detection or choose from 100 supported languages.',
+    feature5Title: 'Fits your workflow', feature5Copy: 'Choose your microphone, pin language favorites, and customize hotkeys and cleanup.',
+    feature6Title: 'Your vocabulary, your models', feature6Copy: 'Bias transcription toward names and technical terms, and choose the model that fits your speed and accuracy needs.',
+    plansEyebrow: 'Simple plans', plansTitle: 'Start local. Go further.', plansLead: 'Keep local dictation free forever. Add cloud mode when you need it.',
+    free: 'Free', forever: 'forever', freeSummary: 'Unlimited local transcription. Your audio and words stay on your computer.', getSpeech: 'Get Speech', unlimitedLocal: 'Unlimited words · local mode',
+    proRange: 'For more range', perMonth: 'per month', proSummary: 'Cloud mode for when you need extra flexibility, with a monthly word allowance.', choosePro: 'Choose Pro', proLimit: '50,000 words / month · cloud mode',
+    pricingNote: 'Pro pricing and its 50,000-word monthly limit are editorial examples until the paid plan is seeded in the billing catalog.',
+    ctaEyebrow: 'Make space for the thought', ctaTitleA: 'Speak freely.', ctaTitleB: 'Type less.', ctaLead: 'Speech runs quietly in the background and puts your words exactly where they belong.', loginSignup: 'Log in or sign up',
+    listening: 'LISTENING', localPrivate: 'LOCAL · PRIVATE', footerLead: 'Private dictation, everywhere', copyright: '© 2026 Speech', home: 'Speech home',
+  },
+  es: {
+    mainNavigation: 'Navegación principal', features: 'Funciones', pricing: 'Precios', login: 'Iniciar sesión',
+    heroEyebrow: 'Tu voz, en el cursor', heroTitleA: 'Dilo una vez.', heroTitleB: 'Sigue avanzando.',
+    heroLead: 'Dictado local que pega donde escribes. Rápido, privado y listo cuando tú quieras.',
+    download: 'Descargar Speech', signup: 'Regístrate gratis', platforms: 'Windows · macOS · Linux  /  No necesitas una cuenta para dictado local',
+    featuresEyebrow: 'El silencio que ayuda', featuresTitle: 'Speech no estorba.',
+    featuresLead: 'Todo lo necesario para convertir ideas en texto, sin enviar tu voz a ningún sitio.',
+    feature1Title: 'Privado por diseño', feature1Copy: 'La grabación y transcripción se ejecutan localmente con faster-whisper. Tu voz permanece en tu computadora.',
+    feature2Title: 'Manos libres cuando quieras', feature2Copy: 'Di “hey speech” u “oye speech” para empezar a dictar, y luego di “stop” o guarda silencio para pegar.',
+    feature3Title: 'Funciona donde trabajas', feature3Copy: 'Dicta en navegadores, documentos, chats, IDE y terminales.',
+    feature4Title: 'Habla tu idioma', feature4Copy: 'Usa detección automática o elige entre 100 idiomas compatibles.',
+    feature5Title: 'Se adapta a tu flujo', feature5Copy: 'Elige tu micrófono, fija idiomas favoritos y personaliza atajos y limpieza.',
+    feature6Title: 'Tu vocabulario, tus modelos', feature6Copy: 'Prioriza nombres y términos técnicos, y elige el modelo que encaje con tu velocidad y precisión.',
+    plansEyebrow: 'Planes sencillos', plansTitle: 'Empieza local. Llega más lejos.', plansLead: 'Mantén el dictado local gratis para siempre. Añade el modo nube cuando lo necesites.',
+    free: 'Gratis', forever: 'para siempre', freeSummary: 'Transcripción local ilimitada. Tu audio y tus palabras permanecen en tu computadora.', getSpeech: 'Obtener Speech', unlimitedLocal: 'Palabras ilimitadas · modo local',
+    proRange: 'Para llegar más lejos', perMonth: 'al mes', proSummary: 'Modo nube para cuando necesites más flexibilidad, con una cuota mensual de palabras.', choosePro: 'Elegir Pro', proLimit: '50.000 palabras / mes · modo nube',
+    pricingNote: 'El precio de Pro y su límite mensual de 50.000 palabras son ejemplos editoriales hasta que el plan de pago se agregue al catálogo.',
+    ctaEyebrow: 'Haz espacio para la idea', ctaTitleA: 'Habla libremente.', ctaTitleB: 'Escribe menos.', ctaLead: 'Speech funciona silenciosamente en segundo plano y coloca tus palabras justo donde deben estar.', loginSignup: 'Inicia sesión o regístrate',
+    listening: 'ESCUCHANDO', localPrivate: 'LOCAL · PRIVADO', footerLead: 'Dictado privado, en cualquier lugar', copyright: '© 2026 Speech', home: 'Inicio de Speech',
+  },
+} as const;
+
+assertKeyParity('landing', landing);

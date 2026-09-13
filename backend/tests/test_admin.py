@@ -29,6 +29,10 @@ def test_admin_users_list_and_gate(monkeypatch):
         with TestClient(app) as client:
             assert client.get("/admin/users").json()[0]["usage"] == 7
             app.dependency_overrides[validate_token] = lambda: Claims("u2", "plan-free")
-            assert client.get("/admin/users").status_code == 403
+            spanish = client.get("/admin/users", headers={"Accept-Language": "es"})
+            english = client.get("/admin/users")
+            assert spanish.status_code == english.status_code == 403
+            assert spanish.json()["detail"] == "Se requiere el rol de administrador"
+            assert english.json()["detail"] == "Admin role required"
     finally:
         app.dependency_overrides.clear()

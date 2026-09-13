@@ -1,5 +1,5 @@
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from app.auth import Claims, validate_token
 from app.config import get_settings
@@ -13,16 +13,16 @@ router = APIRouter(prefix="/billing")
 
 
 @router.post("/checkout")
-def checkout(plan_id: str, claims: Claims = Depends(validate_token)):
+def checkout(plan_id: str, accept_language: str | None = Header(None, alias='Accept-Language'), claims: Claims = Depends(validate_token)):
     with session_factory()() as session:
         user = session.get(User, claims.subject_id) or User(subject_id=claims.subject_id)
-        return {"url": BillingService(PlanRepository(session), SubscriptionRepository(session)).create_checkout_session(user, plan_id).url}
+        return {"url": BillingService(PlanRepository(session), SubscriptionRepository(session)).create_checkout_session(user, plan_id, accept_language).url}
 
 
 @router.post("/portal")
-def portal(claims: Claims = Depends(validate_token)):
+def portal(accept_language: str | None = Header(None, alias='Accept-Language'), claims: Claims = Depends(validate_token)):
     with session_factory()() as session:
-        url = BillingService(PlanRepository(session), SubscriptionRepository(session)).create_portal_session(claims.subject_id).url
+        url = BillingService(PlanRepository(session), SubscriptionRepository(session)).create_portal_session(claims.subject_id, accept_language).url
     return {"url": url}
 
 

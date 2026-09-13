@@ -1,21 +1,25 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { backend, getSession } from '../../lib/auth';
+import { resolveLocale } from '../../i18n';
+import { dashboard } from '../../i18n/dashboard';
 
 const session = getSession(Astro.cookies)!;
-const response = await fetch(`${backend}/admin/users`, { headers: { Authorization: `Bearer ${session.accessToken}` } });
+const locale = resolveLocale(Astro.request);
+const t = dashboard[locale];
+const response = await fetch(`${backend}/admin/users`, { headers: { Authorization: `Bearer ${session.accessToken}`, 'Accept-Language': locale } });
 if (response.status === 403) Astro.response.status = 403;
 const users = response.ok ? await response.json() : [];
 ---
-<Layout title="Admin — Speech">
+<Layout title={`${t.operations} — Speech`}>
   <main class="dashboard shell">
-    <nav class="dashboard-nav"><a class="wordmark" href="/">speech</a><a href="/dashboard">Dashboard</a><a href="/auth/logout">Log out</a></nav>
-    <p class="eyebrow">Operations</p>
-    <h1>Users</h1>
+    <nav class="dashboard-nav"><a class="wordmark" href="/"><span class="mark">S</span> speech</a><a href="/dashboard">{t.dashboard}</a><a href="/auth/logout">{t.logout}</a></nav>
+    <p class="eyebrow">{t.operations}</p>
+    <h1>{t.users}</h1>
     <table>
-      <thead><tr><th>Identifier</th><th>Plan</th><th>Usage</th></tr></thead>
+      <thead><tr><th>{t.identifier}</th><th>{t.plan}</th><th>{t.usage}</th></tr></thead>
       <tbody>{users.map((user) => (
-        <tr><td>{user.subject_id}</td><td>{user.plan}</td><td>{user.usage.toLocaleString()} words</td></tr>
+        <tr><td>{user.subject_id}</td><td>{user.plan}</td><td>{user.usage.toLocaleString()} {t.words}</td></tr>
       ))}</tbody>
     </table>
   </main>

@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
-export const issuer = process.env.KEYCLOAK_ISSUER_URL || 'http://localhost:8080/realms/speech';
+export const issuer = import.meta.env.PUBLIC_KEYCLOAK_PUBLIC_ISSUER_URL || process.env.KEYCLOAK_PUBLIC_ISSUER_URL || process.env.KEYCLOAK_ISSUER_URL || 'http://localhost:8080/realms/speech';
+const serverIssuer = import.meta.env.PUBLIC_KEYCLOAK_ISSUER_URL || process.env.KEYCLOAK_ISSUER_URL || issuer;
 export const backend = process.env.BACKEND_URL || 'http://localhost:8000';
 const clientId = process.env.KEYCLOAK_WEB_CLIENT_ID || 'speech-dashboard-web';
 const redirectUri = process.env.DASHBOARD_URL ? `${process.env.DASHBOARD_URL}/auth/callback` : 'http://localhost:4321/auth/callback';
@@ -20,7 +21,7 @@ export async function loginUrl(cookies: any) {
 export async function exchange(code: string, state: string, cookies: any) {
   const saved = cookies.get('oauth_state')?.value?.split('.') || [];
   if (saved.length !== 2 || saved[0] !== state) return null;
-  const result = await fetch(`${issuer}/protocol/openid-connect/token`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', client_id: clientId, code, redirect_uri: redirectUri, code_verifier: saved[1] }) });
+  const result = await fetch(`${serverIssuer}/protocol/openid-connect/token`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', client_id: clientId, code, redirect_uri: redirectUri, code_verifier: saved[1] }) });
   if (!result.ok) return null;
   const tokens = await result.json(); const claims = JSON.parse(Buffer.from(tokens.access_token.split('.')[1], 'base64url').toString()); const id = randomBytes(32).toString('base64url');
   sessions.set(id, { accessToken: tokens.access_token, idToken: tokens.id_token, claims }); cookies.delete('oauth_state', { path: '/' }); cookies.set('session', id, { httpOnly: true, secure: secureCookies, sameSite: 'lax', path: '/', maxAge: 3600 }); return sessions.get(id);

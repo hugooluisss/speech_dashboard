@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 import jwt
-from fastapi import HTTPException, Security, status
+from fastapi import Header, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
 
 from app.config import get_settings
+from app.messages import message
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -19,8 +20,8 @@ class Claims:
 
 
 @lru_cache
-def jwks_client(issuer: str) -> PyJWKClient:
-    return PyJWKClient(f"{issuer.rstrip('/')}/protocol/openid-connect/certs", cache_jwk_set=True, lifespan=300)
+def jwks_client(base_url: str) -> PyJWKClient:
+    return PyJWKClient(f"{base_url.rstrip('/')}/protocol/openid-connect/certs", cache_jwk_set=True, lifespan=300)
 
 
 def extract_claims(payload: dict) -> Claims:
@@ -33,12 +34,13 @@ def extract_claims(payload: dict) -> Claims:
     return Claims(subject_id=subject_id, plan=plan, admin="admin" in roles)
 
 
-def validate_token(credentials: HTTPAuthorizationCredentials | None = Security(bearer)) -> Claims:
+def validate_token(credentials: HTTPAuthorizationCredentials | None = Security(bearer), accept_language: str | None = Header(None, alias='Accept-Language')) -> Claims:
     if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=message('not_authenticated', accept_language), headers={"WWW-Authenticate": "Bearer"})
     settings = get_settings()
     try:
-        key = jwks_client(settings.keycloak_issuer_url).get_signing_key_from_jwt(credentials.credentials).key
+        jwks_base_url = settings.keycloak_jwks_base_url or settings.keycloak_issuer_url
+        key = jwks_client(jwks_base_url).get_signing_key_from_jwt(credentials.credentials).key
         payload = jwt.decode(credentials.credentials, key, algorithms=["RS256"], issuer=settings.keycloak_issuer_url, options={"verify_aud": False})
         return extract_claims(payload)
     except (jwt.PyJWTError, Exception) as exc:

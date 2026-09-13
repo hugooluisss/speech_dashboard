@@ -1,9 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { backend, getSession } from '../../lib/auth';
+import { resolveLocale } from '../../i18n';
+import { dashboard } from '../../i18n/dashboard';
 
 const session = getSession(Astro.cookies)!;
-const headers = { Authorization: `Bearer ${session.accessToken}` };
+const locale = resolveLocale(Astro.request);
+const t = dashboard[locale];
+const headers = { Authorization: `Bearer ${session.accessToken}`, 'Accept-Language': locale };
 const [meResponse, usageResponse, plansResponse] = await Promise.all([
   fetch(`${backend}/me`, { headers }), fetch(`${backend}/usage`, { headers }), fetch(`${backend}/plans`, { headers }),
 ]);
@@ -16,32 +20,32 @@ const planName = currentPlan?.display_name ?? me.plan.replace('plan-', '');
 const displayName = session.claims.preferred_username ?? me.subject_id;
 const hasCloudQuota = usage.limit > 0;
 ---
-<Layout title="Dashboard — Speech">
+<Layout title={`${t.dashboard} — Speech`}>
   <main class="dashboard shell">
-    <nav class="dashboard-nav"><a class="wordmark" href="/"><span class="mark">S</span> speech</a><span>{displayName}</span><a href="/auth/logout">Log out</a></nav>
-    <p class="eyebrow">Your dashboard</p>
+    <nav class="dashboard-nav"><a class="wordmark" href="/"><span class="mark">S</span> speech</a><span>{displayName}</span><a href="/auth/logout">{t.logout}</a></nav>
+    <p class="eyebrow">{t.yourDashboard}</p>
     <h1>{planName}</h1>
     <section class="dashboard-grid">
       <article>
-        <p class="eyebrow">Current period</p>
+        <p class="eyebrow">{t.currentPeriod}</p>
         {hasCloudQuota ? (
           <>
             <strong>{usage.used.toLocaleString()} / {usage.limit.toLocaleString()}</strong>
-            <p>words used · {usage.remaining.toLocaleString()} remaining</p>
+            <p>{t.wordsUsed} · {usage.remaining.toLocaleString()} {t.remaining}</p>
           </>
         ) : (
           <>
-            <strong>Unlimited</strong>
-            <p>Local transcription has no word limit. Your plan doesn't include cloud quota.</p>
+            <strong>{t.unlimited}</strong>
+            <p>{t.localNoLimit}</p>
           </>
         )}
       </article>
       <article>
-        <p class="eyebrow">Billing</p>
-        <p>Current plan: <strong>{planName}</strong></p>
-        <div class="actions"><form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label="Choose a plan">{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">Upgrade</button></form><a class="button button-secondary" href="/dashboard/portal">Manage billing</a></div>
+        <p class="eyebrow">{t.billing}</p>
+        <p>{t.currentPlan} <strong>{planName}</strong></p>
+        <div class="actions"><form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label={t.choosePlan}>{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">{t.upgrade}</button></form><a class="button button-secondary" href="/dashboard/portal">{t.manageBilling}</a></div>
       </article>
     </section>
-    <a href="/dashboard/admin">Admin dashboard</a>
+    <a href="/dashboard/admin">{t.adminDashboard}</a>
   </main>
 </Layout>

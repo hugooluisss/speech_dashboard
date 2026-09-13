@@ -1,0 +1,76 @@
+include:
+  - path: ./infra/keycloak/docker-compose.yml
+
+services:
+  backend-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${BACKEND_POSTGRES_DB:-speech}
+      POSTGRES_USER: ${BACKEND_POSTGRES_USER:-speech}
+      POSTGRES_PASSWORD: ${BACKEND_POSTGRES_PASSWORD:-speech}
+    volumes:
+      - backend-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BACKEND_POSTGRES_USER:-speech} -d ${BACKEND_POSTGRES_DB:-speech}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    working_dir: /app
+    command: sh -c "uv sync --dev && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${BACKEND_POSTGRES_USER:-speech}:${BACKEND_POSTGRES_PASSWORD:-speech}@backend-postgres:5432/${BACKEND_POSTGRES_DB:-speech}}
+      KEYCLOAK_ISSUER_URL: ${KEYCLOAK_PUBLIC_ISSUER_URL:-http://localhost:8080/realms/speech}
+      KEYCLOAK_JWKS_BASE_URL: ${KEYCLOAK_JWKS_BASE_URL:-http://keycloak:8080/realms/speech}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-speech-dashboard-backend}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-dev-only-speech-dashboard-backend-secret}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-sk_test_replace_me}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_replace_me}
+    volumes:
+      - ./backend:/app
+      - backend-venv:/app/.venv
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      backend-postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 4321"
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8000}
+      KEYCLOAK_ISSUER_URL: ${FRONTEND_KEYCLOAK_ISSUER_URL:-http://keycloak:8080/realms/speech}
+      KEYCLOAK_PUBLIC_ISSUER_URL: ${KEYCLOAK_PUBLIC_ISSUER_URL:-http://localhost:8080/realms/speech}
+      PUBLIC_KEYCLOAK_ISSUER_URL: ${FRONTEND_KEYCLOAK_ISSUER_URL:-http://keycloak:8080/realms/speech}
+      PUBLIC_KEYCLOAK_PUBLIC_ISSUER_URL: ${KEYCLOAK_PUBLIC_ISSUER_URL:-http://localhost:8080/realms/speech}
+      KEYCLOAK_WEB_CLIENT_ID: ${KEYCLOAK_WEB_CLIENT_ID:-speech-dashboard-web}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:4321}
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-4321}:4321"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4321/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  backend-postgres:
+  backend-venv:
+  frontend-node-modules:

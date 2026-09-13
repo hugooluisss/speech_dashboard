@@ -2,7 +2,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
 
 from app.auth import Claims, validate_token
 from app.db import session_factory
@@ -10,20 +10,22 @@ from app.repositories.plans import PlanRepository
 from app.repositories.usage import UsageRepository
 from app.services.transcription import TranscriptionEngine
 from app.services.usage import UsageService
+from app.messages import message
 
 router = APIRouter()
 engine = TranscriptionEngine()
 
 
 @router.post("/transcribe")
-def transcribe(file: UploadFile = File(...), claims: Claims = Depends(validate_token)) -> dict[str, str]:
+def transcribe(file: UploadFile = File(...), claims: Claims = Depends(validate_token), accept_language: str | None = Header(None, alias='Accept-Language')) -> dict[str, str]:
+    language = accept_language
     with session_factory()() as session:
         plan = PlanRepository(session).get(claims.plan)
         if not plan:
-            raise HTTPException(status_code=404, detail="Plan not found")
+            raise HTTPException(status_code=404, detail=message('plan_not_found', language))
         usage = UsageService(UsageRepository(session))
         if not usage.has_remaining_quota(claims.subject_id, plan):
-            raise HTTPException(status_code=403, detail="Quota exhausted")
+            raise HTTPException(status_code=403, detail=message('quota_exhausted', language))
 
         temporary_path: Path | None = None
         try:

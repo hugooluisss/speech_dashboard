@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str
     keycloak_issuer_url: str
+    keycloak_jwks_base_url: str | None = None
     keycloak_client_id: str
     keycloak_client_secret: str
     stripe_api_key: str

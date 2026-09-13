@@ -1,15 +1,17 @@
 ---
 import '../styles/global.css';
+import { resolveLocale } from '../i18n';
 
 interface Props {
   title?: string;
 }
 
 const { title = 'Speech — private dictation, everywhere' } = Astro.props;
+const locale = resolveLocale(Astro.request);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -17,6 +19,17 @@ const { title = 'Speech — private dictation, everywhere' } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
+    <div class="language-switch" aria-label="Language">
+      <button type="button" data-locale="en" aria-pressed={locale === 'en'}>EN</button>
+      <span>/</span>
+      <button type="button" data-locale="es" aria-pressed={locale === 'es'}>ES</button>
+    </div>
     <slot />
+    <script is:inline>
+      document.querySelectorAll('[data-locale]').forEach((button) => button.addEventListener('click', () => {
+        document.cookie = `speech_locale=${button.dataset.locale}; Max-Age=31536000; Path=/; SameSite=Lax`;
+        location.reload();
+      }));
+    </script>
   </body>
 </html>

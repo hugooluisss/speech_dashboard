@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from app.config import get_settings
 from app.repositories.plans import PlanRepository
 from app.repositories.subscriptions import SubscriptionRepository
+from app.messages import message
 
 
 class KeycloakAdmin:
@@ -28,17 +29,17 @@ class BillingService:
     def __init__(self, plans: PlanRepository, subscriptions: SubscriptionRepository, keycloak=None):
         self.plans, self.subscriptions, self.keycloak = plans, subscriptions, keycloak or KeycloakAdmin()
 
-    def create_checkout_session(self, user, plan_id: str):
+    def create_checkout_session(self, user, plan_id: str, accept_language: str | None = None):
         plan = self.plans.get(plan_id)
         if not plan or not plan.active or not plan.stripe_price_id:
-            raise HTTPException(status_code=400, detail="Unknown or free plan")
+            raise HTTPException(status_code=400, detail=message('unknown_plan', accept_language))
         stripe.api_key = get_settings().stripe_api_key
         return stripe.checkout.Session.create(mode="subscription", line_items=[{"price": plan.stripe_price_id, "quantity": 1}], success_url="http://localhost:3000/billing/success", cancel_url="http://localhost:3000/billing/cancel", metadata={"subject_id": user.subject_id}, client_reference_id=user.subject_id)
 
-    def create_portal_session(self, subject_id: str):
+    def create_portal_session(self, subject_id: str, accept_language: str | None = None):
         subscription = self.subscriptions.get_by_subject(subject_id)
         if not subscription or not subscription.stripe_customer_id:
-            raise HTTPException(status_code=400, detail="No Stripe customer record")
+            raise HTTPException(status_code=400, detail=message('no_stripe_customer', accept_language))
         stripe.api_key = get_settings().stripe_api_key
         return stripe.billing_portal.Session.create(
             customer=subscription.stripe_customer_id,

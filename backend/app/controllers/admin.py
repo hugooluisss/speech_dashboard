@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.auth import Claims, validate_token
 from app.db import session_factory
@@ -7,14 +7,15 @@ from app.repositories.usage import UsageRepository
 from app.repositories.users import UserRepository
 from app.repositories.subscriptions import SubscriptionRepository
 from app.services.usage import UsageService
+from app.messages import message
 
 router = APIRouter(prefix="/admin")
 
 
 @router.get("/users")
-def users(claims: Claims = Depends(validate_token)):
+def users(claims: Claims = Depends(validate_token), accept_language: str | None = Header(None, alias='Accept-Language')):
     if not claims.admin:
-        raise HTTPException(status_code=403, detail="Admin role required")
+        raise HTTPException(status_code=403, detail=message('admin_role_required', accept_language))
     with session_factory()() as session:
         plans = PlanRepository(session)
         usage = UsageService(UsageRepository(session))
