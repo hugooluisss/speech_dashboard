@@ -1,16 +1,23 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { backend, getSession } from '../../lib/auth';
+import { authenticatedFetch, AuthRefreshError, backend, getSession } from '../../lib/auth';
 import { resolveLocale } from '../../i18n';
 import { dashboard } from '../../i18n/dashboard';
 
-const session = getSession(Astro.cookies)!;
+const session = getSession(Astro.cookies);
+if (!session) return Astro.redirect('/auth/login');
 const locale = resolveLocale(Astro.request);
 const t = dashboard[locale];
-const headers = { Authorization: `Bearer ${session.accessToken}`, 'Accept-Language': locale };
-const [meResponse, usageResponse, plansResponse] = await Promise.all([
-  fetch(`${backend}/me`, { headers }), fetch(`${backend}/usage`, { headers }), fetch(`${backend}/plans`, { headers }),
-]);
+let meResponse, usageResponse, plansResponse;
+try {
+  const headers = { 'Accept-Language': locale };
+  [meResponse, usageResponse, plansResponse] = await Promise.all([
+    authenticatedFetch(session, Astro.cookies, `${backend}/me`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/usage`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/plans`, { headers }),
+  ]);
+} catch (error) {
+  if (error instanceof AuthRefreshError) return Astro.redirect('/auth/login');
+  throw error;
+}
 const me = await meResponse.json();
 const usage = await usageResponse.json();
 const plans = plansResponse.ok ? await plansResponse.json() : [];

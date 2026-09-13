@@ -1,13 +1,20 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { backend, getSession } from '../../lib/auth';
+import { authenticatedFetch, AuthRefreshError, backend, getSession } from '../../lib/auth';
 import { resolveLocale } from '../../i18n';
 import { dashboard } from '../../i18n/dashboard';
 
-const session = getSession(Astro.cookies)!;
+const session = getSession(Astro.cookies);
+if (!session) return Astro.redirect('/auth/login');
 const locale = resolveLocale(Astro.request);
 const t = dashboard[locale];
-const response = await fetch(`${backend}/admin/users`, { headers: { Authorization: `Bearer ${session.accessToken}`, 'Accept-Language': locale } });
+let response;
+try {
+  response = await authenticatedFetch(session, Astro.cookies, `${backend}/admin/users`, { headers: { 'Accept-Language': locale } });
+} catch (error) {
+  if (error instanceof AuthRefreshError) return Astro.redirect('/auth/login');
+  throw error;
+}
 if (response.status === 403) Astro.response.status = 403;
 const users = response.ok ? await response.json() : [];
 ---
