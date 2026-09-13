@@ -14,10 +14,11 @@ const [meResponse, usageResponse, plansResponse] = await Promise.all([
 const me = await meResponse.json();
 const usage = await usageResponse.json();
 const plans = plansResponse.ok ? await plansResponse.json() : [];
-const upgradePlans = plans.filter((plan) => plan.tier_id !== me.plan);
+const upgradePlans = plans.filter((plan) => plan.tier_id !== me.plan && plan.stripe_price_id);
 const currentPlan = plans.find((plan) => plan.tier_id === me.plan);
 const planName = currentPlan?.display_name ?? me.plan.replace('plan-', '');
 const displayName = session.claims.preferred_username ?? me.subject_id;
+const isAdmin = session.claims.plan?.includes('admin');
 const hasCloudQuota = usage.limit > 0;
 ---
 <Layout title={`${t.dashboard} — Speech`}>
@@ -46,6 +47,6 @@ const hasCloudQuota = usage.limit > 0;
         <div class="actions"><form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label={t.choosePlan}>{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">{t.upgrade}</button></form><a class="button button-secondary" href="/dashboard/portal">{t.manageBilling}</a></div>
       </article>
     </section>
-    <a href="/dashboard/admin">{t.adminDashboard}</a>
+    {isAdmin && <a href="/dashboard/admin">{t.adminDashboard}</a>}
   </main>
 </Layout>
