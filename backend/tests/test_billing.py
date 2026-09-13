@@ -58,6 +58,28 @@ def test_portal_requires_customer_and_returns_url(monkeypatch):
         service.create_portal_session("missing")
 
 
+def test_payment_history_skips_stripe_without_customer(monkeypatch):
+    session = db()
+    session.add(UserSubscription(subject_id="u1", status="active", plan_tier_id="plan-free"))
+    session.commit()
+    monkeypatch.setattr("app.services.billing.stripe.Invoice.list", lambda **_: (_ for _ in ()).throw(AssertionError("Stripe called")))
+    service = BillingService(PlanRepository(session), SubscriptionRepository(session), keycloak=SimpleNamespace())
+    assert service.list_payment_history("u1") == []
+
+
+def test_payment_history_returns_invoice_fields(monkeypatch):
+    session = db()
+    session.add(UserSubscription(subject_id="u1", stripe_customer_id="cus_1", status="active", plan_tier_id="plan-pro"))
+    session.commit()
+    invoice = SimpleNamespace(created=0, amount_paid=1200, currency="usd", status="paid")
+    def list_invoices(**kwargs):
+        assert kwargs == {"customer": "cus_1", "limit": 20}
+        return SimpleNamespace(data=[invoice])
+    monkeypatch.setattr("app.services.billing.stripe.Invoice.list", list_invoices)
+    service = BillingService(PlanRepository(session), SubscriptionRepository(session), keycloak=SimpleNamespace())
+    assert service.list_payment_history("u1") == [{"created_at": "1970-01-01T00:00:00+00:00", "amount_paid": 1200, "currency": "usd", "status": "paid"}]
+
+
 def assert_metadata(kwargs):
     assert kwargs["metadata"] == {"subject_id": "u1"}
 

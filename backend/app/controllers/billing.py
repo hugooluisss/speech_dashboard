@@ -26,6 +26,12 @@ def portal(accept_language: str | None = Header(None, alias='Accept-Language'), 
     return {"url": url}
 
 
+@router.get("/history")
+def history(claims: Claims = Depends(validate_token)) -> list[dict]:
+    with session_factory()() as session:
+        return BillingService(PlanRepository(session), SubscriptionRepository(session)).list_payment_history(claims.subject_id)
+
+
 @router.post("/webhook")
 async def webhook(request: Request):
     try:

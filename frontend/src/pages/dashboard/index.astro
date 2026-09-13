@@ -8,11 +8,11 @@ const session = getSession(Astro.cookies);
 if (!session) return Astro.redirect('/auth/login');
 const locale = resolveLocale(Astro.request);
 const t = dashboard[locale];
-let meResponse, usageResponse, plansResponse;
+let meResponse, usageResponse, plansResponse, historyResponse;
 try {
   const headers = { 'Accept-Language': locale };
-  [meResponse, usageResponse, plansResponse] = await Promise.all([
-    authenticatedFetch(session, Astro.cookies, `${backend}/me`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/usage`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/plans`, { headers }),
+  [meResponse, usageResponse, plansResponse, historyResponse] = await Promise.all([
+    authenticatedFetch(session, Astro.cookies, `${backend}/me`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/usage`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/plans`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/billing/history`, { headers }),
   ]);
 } catch (error) {
   if (error instanceof AuthRefreshError) return Astro.redirect('/auth/login');
@@ -21,6 +21,7 @@ try {
 const me = await meResponse.json();
 const usage = await usageResponse.json();
 const plans = plansResponse.ok ? await plansResponse.json() : [];
+const paymentHistory = historyResponse.ok ? await historyResponse.json() : [];
 const upgradePlans = plans.filter((plan) => plan.tier_id !== me.plan && plan.stripe_price_id);
 const currentPlan = plans.find((plan) => plan.tier_id === me.plan);
 const planName = currentPlan?.display_name ?? me.plan.replace('plan-', '');
@@ -51,8 +52,12 @@ const hasCloudQuota = usage.limit > 0;
       <article>
         <p class="eyebrow">{t.billing}</p>
         <p>{t.currentPlan} <strong>{planName}</strong></p>
-        <div class="actions"><form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label={t.choosePlan}>{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">{t.upgrade}</button></form><a class="button button-secondary" href="/dashboard/portal">{t.manageBilling}</a></div>
+        <div class="actions">{upgradePlans.length > 0 && <form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label={t.choosePlan}>{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">{t.upgrade}</button></form>}<a class="button button-secondary" href="/dashboard/portal">{t.manageBilling}</a></div>
       </article>
+    </section>
+    <section>
+      <p class="eyebrow">{t.paymentHistory}</p>
+      {!historyResponse.ok ? <p>{t.paymentHistoryError}</p> : paymentHistory.length > 0 ? <table><thead><tr><th>{t.paymentDate}</th><th>{t.paymentAmount}</th><th>{t.paymentStatus}</th></tr></thead><tbody>{paymentHistory.map((payment) => <tr><td>{new Date(payment.created_at).toLocaleDateString(locale)}</td><td>{new Intl.NumberFormat(locale, { style: 'currency', currency: payment.currency.toUpperCase() }).format(payment.amount_paid / 100)}</td><td>{payment.status}</td></tr>)}</tbody></table> : <p>{t.noPayments}</p>}
     </section>
     {isAdmin && <a href="/dashboard/admin">{t.adminDashboard}</a>}
   </main>

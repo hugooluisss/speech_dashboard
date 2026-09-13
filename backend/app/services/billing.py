@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import httpx
 import stripe
 from fastapi import HTTPException
@@ -45,6 +47,22 @@ class BillingService:
             customer=subscription.stripe_customer_id,
             return_url="http://localhost:4321/dashboard",
         )
+
+    def list_payment_history(self, subject_id: str) -> list[dict]:
+        subscription = self.subscriptions.get_by_subject(subject_id)
+        if not subscription or not subscription.stripe_customer_id:
+            return []
+        stripe.api_key = get_settings().stripe_api_key
+        invoices = stripe.Invoice.list(customer=subscription.stripe_customer_id, limit=20)
+        return [
+            {
+                "created_at": datetime.fromtimestamp(invoice.created, timezone.utc).isoformat(),
+                "amount_paid": invoice.amount_paid,
+                "currency": invoice.currency,
+                "status": invoice.status,
+            }
+            for invoice in invoices.data
+        ]
 
     def handle_subscription_event(self, event):
         obj = event["data"]["object"]
