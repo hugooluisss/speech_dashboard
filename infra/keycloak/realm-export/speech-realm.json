@@ -22,6 +22,10 @@
         "description": "Placeholder plan role; billing will define limits."
       },
       {
+        "name": "plan-basica",
+        "description": "Placeholder plan role; billing will define limits."
+      },
+      {
         "name": "plan-pro",
         "description": "Placeholder plan role; billing will define limits."
       },

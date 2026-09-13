@@ -131,7 +131,7 @@ def test_transcribe_records_usage_in_postgres(monkeypatch):
     with Session(database) as session:
         session.query(UsagePeriod).filter_by(subject_id=subject_id).delete()
         session.query(Plan).filter_by(tier_id="plan-transcription-test").delete()
-        session.add(Plan(tier_id="plan-transcription-test", display_name="Test", keycloak_role="plan-transcription-test", word_limit=100, period_unit="month"))
+        session.add(Plan(tier_id="plan-transcription-test", name_en="Test", name_es="Prueba", keycloak_role="plan-transcription-test", word_limit=100, period_unit="month"))
         session.commit()
 
     import app.controllers.transcription as controller

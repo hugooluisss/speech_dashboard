@@ -25,7 +25,7 @@ def test_usage_repository_creates_and_increments_period():
 
 def test_usage_service_computes_remaining_and_quota():
     engine = make_session()
-    plan = Plan(tier_id="plan-pro", display_name="Pro", keycloak_role="plan-pro", word_limit=100, period_unit="month")
+    plan = Plan(tier_id="plan-pro", name_en="Pro", name_es="Pro", keycloak_role="plan-pro", word_limit=100, period_unit="month")
     with Session(engine) as session:
         service = UsageService(UsageRepository(session))
         assert service.get_usage("user-1", plan)["used"] == 0

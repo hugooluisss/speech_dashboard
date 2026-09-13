@@ -7,7 +7,7 @@ from app.repositories.usage import UsageRepository
 from app.repositories.users import UserRepository
 from app.repositories.subscriptions import SubscriptionRepository
 from app.services.usage import UsageService
-from app.messages import message
+from app.messages import locale, message
 
 router = APIRouter(prefix="/admin")
 
@@ -25,5 +25,5 @@ def users(claims: Claims = Depends(validate_token), accept_language: str | None 
             subscription = subscriptions.get_by_subject(user.subject_id)
             plan = plans.get(subscription.plan_tier_id if subscription else "plan-free")
             current = usage.get_usage(user.subject_id, plan) if plan else {"used": 0, "period": usage.current_period()}
-            rows.append({"subject_id": user.subject_id, "plan": plan.display_name if plan else "Unknown", "usage": current["used"], "period": current["period"]})
+            rows.append({"subject_id": user.subject_id, "plan": getattr(plan, f"name_{locale(accept_language)}") if plan else "Unknown", "usage": current["used"], "period": current["period"]})
         return rows

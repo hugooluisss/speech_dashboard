@@ -21,12 +21,14 @@ def test_admin_users_list_and_gate(monkeypatch):
     for key, value in {"DATABASE_URL": "sqlite://", "KEYCLOAK_ISSUER_URL": "http://keycloak/realms/speech", "KEYCLOAK_CLIENT_ID": "client", "KEYCLOAK_CLIENT_SECRET": "secret", "STRIPE_API_KEY": "sk_test_mock", "STRIPE_WEBHOOK_SECRET": "whsec_mock"}.items():
         monkeypatch.setenv(key, value)
     session = db()
-    session.add_all([Plan(tier_id="plan-free", display_name="Free", keycloak_role="plan-free", word_limit=100, period_unit="month", active=True), User(subject_id="u1"), UserSubscription(subject_id="u1", status="active", plan_tier_id="plan-free"), UsagePeriod(subject_id="u1", period_key="2026-09", words_used=7)])
+    session.add_all([Plan(tier_id="plan-free", name_en="Free", name_es="Gratis", keycloak_role="plan-free", word_limit=100, period_unit="month", active=True), User(subject_id="u1"), UserSubscription(subject_id="u1", status="active", plan_tier_id="plan-free"), UsagePeriod(subject_id="u1", period_key="2026-09", words_used=7)])
     session.commit()
     monkeypatch.setattr("app.controllers.admin.session_factory", lambda: lambda: nullcontext(session))
     app.dependency_overrides[validate_token] = lambda: Claims("admin-user", "plan-free", True)
     try:
         with TestClient(app) as client:
+            assert client.get("/admin/users", headers={"Accept-Language": "en"}).json()[0]["plan"] == "Free"
+            assert client.get("/admin/users", headers={"Accept-Language": "es"}).json()[0]["plan"] == "Gratis"
             assert client.get("/admin/users").json()[0]["usage"] == 7
             app.dependency_overrides[validate_token] = lambda: Claims("u2", "plan-free")
             spanish = client.get("/admin/users", headers={"Accept-Language": "es"})

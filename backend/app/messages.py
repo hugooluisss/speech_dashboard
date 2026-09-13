@@ -9,7 +9,10 @@ MESSAGES = {
 
 
 def message(key: str, accept_language: str | None = None) -> str:
+    return MESSAGES[key][locale(accept_language)]
+
+
+def locale(accept_language: str | None = None) -> str:
     if not isinstance(accept_language, str):
         accept_language = None
-    locale = 'es' if (accept_language or '').lower().split(',')[0].strip().startswith('es') else 'en'
-    return MESSAGES[key][locale]
+    return 'es' if (accept_language or '').lower().split(',')[0].strip().startswith('es') else 'en'

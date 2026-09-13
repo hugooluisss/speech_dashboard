@@ -17,7 +17,8 @@ class Plan(Base):
     __tablename__ = "plans"
 
     tier_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_en: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_es: Mapped[str] = mapped_column(String(255), nullable=False)
     keycloak_role: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     stripe_price_id: Mapped[str | None] = mapped_column(String(255))
     word_limit: Mapped[int] = mapped_column(Integer, nullable=False)

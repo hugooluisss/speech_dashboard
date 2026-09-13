@@ -25,7 +25,7 @@ def db():
 
 def test_checkout_sets_subject_metadata_and_rejects_unknown(monkeypatch):
     session = db()
-    session.add_all([Plan(tier_id="plan-free", display_name="Free", keycloak_role="plan-free", word_limit=0, period_unit="month", active=True), Plan(tier_id="plan-pro", display_name="Pro", keycloak_role="plan-pro", stripe_price_id="price_pro", word_limit=1000, period_unit="month", active=True)])
+    session.add_all([Plan(tier_id="plan-free", name_en="Free", name_es="Gratis", keycloak_role="plan-free", word_limit=0, period_unit="month", active=True), Plan(tier_id="plan-pro", name_en="Pro", name_es="Pro", keycloak_role="plan-pro", stripe_price_id="price_pro", word_limit=1000, period_unit="month", active=True)])
     session.commit()
     created = SimpleNamespace(url="https://checkout.test")
     monkeypatch.setattr("app.services.billing.stripe.checkout.Session.create", lambda **kwargs: (assert_metadata(kwargs), created)[1])
@@ -86,7 +86,7 @@ def assert_metadata(kwargs):
 
 def test_subscription_events_swap_and_cancel_roles(monkeypatch):
     session = db()
-    session.add_all([Plan(tier_id="plan-free", display_name="Free", keycloak_role="plan-free", word_limit=0, period_unit="month", active=True), Plan(tier_id="plan-pro", display_name="Pro", keycloak_role="plan-pro", stripe_price_id="price_pro", word_limit=1000, period_unit="month", active=True), UserSubscription(subject_id="u1", stripe_customer_id="cus_1", status="active", plan_tier_id="plan-pro")])
+    session.add_all([Plan(tier_id="plan-free", name_en="Free", name_es="Gratis", keycloak_role="plan-free", word_limit=0, period_unit="month", active=True), Plan(tier_id="plan-pro", name_en="Pro", name_es="Pro", keycloak_role="plan-pro", stripe_price_id="price_pro", word_limit=1000, period_unit="month", active=True), UserSubscription(subject_id="u1", stripe_customer_id="cus_1", status="active", plan_tier_id="plan-pro")])
     session.commit()
     calls = []
     service = BillingService(PlanRepository(session), SubscriptionRepository(session), keycloak=SimpleNamespace(set_plan=lambda user, role: calls.append((user, role))))
@@ -108,7 +108,7 @@ def test_catalog_and_checkout_routes(monkeypatch):
     for key, value in {"DATABASE_URL": "sqlite://", "KEYCLOAK_ISSUER_URL": "http://keycloak/realms/speech", "KEYCLOAK_CLIENT_ID": "client", "KEYCLOAK_CLIENT_SECRET": "secret", "STRIPE_API_KEY": "sk_test_mock", "STRIPE_WEBHOOK_SECRET": "whsec_mock"}.items():
         monkeypatch.setenv(key, value)
     session = db()
-    session.add(Plan(tier_id="plan-pro", display_name="Pro", keycloak_role="plan-pro", stripe_price_id="price_pro", word_limit=1000, period_unit="month", active=True))
+    session.add(Plan(tier_id="plan-pro", name_en="Pro", name_es="Pro", keycloak_role="plan-pro", stripe_price_id="price_pro", word_limit=1000, period_unit="month", active=True))
     session.commit()
     monkeypatch.setattr("app.controllers.plans.session_factory", lambda: lambda: nullcontext(session))
     monkeypatch.setattr("app.controllers.billing.session_factory", lambda: lambda: nullcontext(session))

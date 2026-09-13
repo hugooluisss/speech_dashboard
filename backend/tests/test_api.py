@@ -37,7 +37,7 @@ def test_usage_returns_current_period_usage_from_postgres(monkeypatch):
     with Session(engine) as session:
         session.query(UsagePeriod).filter_by(subject_id="usage-user").delete()
         session.query(Plan).filter_by(tier_id="plan-pro").delete()
-        session.add(Plan(tier_id="plan-pro", display_name="Pro", keycloak_role="plan-pro", word_limit=100, period_unit="month"))
+        session.add(Plan(tier_id="plan-pro", name_en="Pro", name_es="Pro", keycloak_role="plan-pro", word_limit=100, period_unit="month"))
         session.commit()
 
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
