@@ -3,9 +3,10 @@ import Layout from '../../layouts/Layout.astro';
 import { authenticatedFetch, AuthRefreshError, backend, getSession } from '../../lib/auth';
 import { resolveLocale } from '../../i18n';
 import { dashboard } from '../../i18n/dashboard';
+import { appPath } from '../../lib/paths';
 
 const session = getSession(Astro.cookies);
-if (!session) return Astro.redirect('/auth/login');
+if (!session) return Astro.redirect(appPath('auth/login'));
 const locale = resolveLocale(Astro.request);
 const t = dashboard[locale];
 let meResponse, usageResponse, plansResponse, historyResponse;
@@ -15,7 +16,7 @@ try {
     authenticatedFetch(session, Astro.cookies, `${backend}/me`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/usage`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/plans`, { headers }), authenticatedFetch(session, Astro.cookies, `${backend}/billing/history`, { headers }),
   ]);
 } catch (error) {
-  if (error instanceof AuthRefreshError) return Astro.redirect('/auth/login');
+  if (error instanceof AuthRefreshError) return Astro.redirect(appPath('auth/login'));
   throw error;
 }
 const me = await meResponse.json();
@@ -28,10 +29,11 @@ const planName = currentPlan?.display_name ?? me.plan.replace('plan-', '');
 const displayName = session.claims.preferred_username ?? me.subject_id;
 const isAdmin = session.claims.plan?.includes('admin');
 const hasCloudQuota = usage.limit > 0;
+const homeUrl = appPath('');
 ---
 <Layout title={`${t.dashboard} — Speech`}>
   <main class="dashboard shell">
-    <nav class="dashboard-nav"><a class="wordmark" href="/"><span class="mark">S</span> speech</a><span>{displayName}</span><a href="/auth/logout">{t.logout}</a></nav>
+    <nav class="dashboard-nav"><a class="wordmark" href={homeUrl}><span class="mark">S</span> speech</a><span>{displayName}</span><a href={appPath('auth/logout')}>{t.logout}</a></nav>
     <p class="eyebrow">{t.yourDashboard}</p>
     <h1>{planName}</h1>
     <section class="dashboard-grid">
@@ -41,6 +43,7 @@ const hasCloudQuota = usage.limit > 0;
           <>
             <strong>{usage.used.toLocaleString()} / {usage.limit.toLocaleString()}</strong>
             <p>{t.wordsUsed} · {usage.remaining.toLocaleString()} {t.remaining}</p>
+            {usage.current_period_end && <p>{t.renewsOn} {new Date(usage.current_period_end).toLocaleDateString(locale)}</p>}
           </>
         ) : (
           <>
@@ -52,13 +55,51 @@ const hasCloudQuota = usage.limit > 0;
       <article>
         <p class="eyebrow">{t.billing}</p>
         <p>{t.currentPlan} <strong>{planName}</strong></p>
-        <div class="actions">{upgradePlans.length > 0 && <form method="post" action="/dashboard/checkout"><select name="plan_id" aria-label={t.choosePlan}>{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button class="button button-primary">{t.upgrade}</button></form>}<a class="button button-secondary" href="/dashboard/portal">{t.manageBilling}</a></div>
+        <div class="actions">{upgradePlans.length > 0 && <><select id="upgrade-plan" aria-label={t.choosePlan}>{upgradePlans.map((plan) => <option value={plan.tier_id}>{plan.display_name}</option>)}</select><button type="button" id="upgrade-open" class="button button-primary">{t.upgrade}</button></>}{me.has_stripe_customer && <a class="button button-secondary" href={appPath('dashboard/portal')}>{t.manageBilling}</a>}</div>
       </article>
     </section>
     <section>
       <p class="eyebrow">{t.paymentHistory}</p>
       {!historyResponse.ok ? <p>{t.paymentHistoryError}</p> : paymentHistory.length > 0 ? <table><thead><tr><th>{t.paymentDate}</th><th>{t.paymentAmount}</th><th>{t.paymentStatus}</th></tr></thead><tbody>{paymentHistory.map((payment) => <tr><td>{new Date(payment.created_at).toLocaleDateString(locale)}</td><td>{new Intl.NumberFormat(locale, { style: 'currency', currency: payment.currency.toUpperCase() }).format(payment.amount_paid / 100)}</td><td>{payment.status}</td></tr>)}</tbody></table> : <p>{t.noPayments}</p>}
     </section>
-    {isAdmin && <a href="/dashboard/admin">{t.adminDashboard}</a>}
+    {isAdmin && <a href={appPath('dashboard/admin')}>{t.adminDashboard}</a>}
+    {upgradePlans.length > 0 && <dialog id="checkout-modal" class="checkout-modal" data-checkout-url={appPath('dashboard/checkout')} data-plan-status-url={appPath('dashboard/plan-status')} data-current-plan={me.plan} data-success-text={t.checkoutSuccess} data-error-text={t.checkoutError}><button type="button" id="checkout-modal-close" class="checkout-modal-close" aria-label={t.close}>&times;</button><div id="checkout-container"></div><p id="checkout-modal-message" class="checkout-modal-message" hidden></p></dialog>}
   </main>
 </Layout>
+
+{upgradePlans.length > 0 && <script>
+  import { loadStripe } from '@stripe/stripe-js';
+  const modal = document.getElementById('checkout-modal') as HTMLDialogElement; const container = document.getElementById('checkout-container') as HTMLElement; const message = document.getElementById('checkout-modal-message') as HTMLElement; const openButton = document.getElementById('upgrade-open'); const closeButton = document.getElementById('checkout-modal-close'); const planSelect = document.getElementById('upgrade-plan') as HTMLSelectElement;
+  const { checkoutUrl = '', planStatusUrl = '', currentPlan = '', successText = '', errorText = '' } = modal?.dataset ?? {};
+  let stripePromise: ReturnType<typeof loadStripe> | undefined, checkout: any;
+  const getStripe = () => stripePromise ??= loadStripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  const showMessage = (text: string) => { message.textContent = text; message.hidden = false; };
+  const teardown = () => { if (checkout) { checkout.destroy(); checkout = undefined; } container.innerHTML = ''; };
+  const openCheckout = async () => {
+    message.hidden = true; message.textContent = ''; teardown(); modal.showModal();
+    try {
+      const response = await fetch(checkoutUrl, { method: 'POST', body: new URLSearchParams({ plan_id: planSelect.value }) });
+      if (!response.ok) throw new Error('checkout_failed');
+      const { client_secret } = await response.json();
+      const stripe = await getStripe();
+      if (!stripe) throw new Error('stripe_unavailable');
+      checkout = await stripe.initEmbeddedCheckout({ clientSecret: client_secret, onComplete: onCheckoutComplete });
+      checkout.mount(container);
+    } catch (error) { teardown(); showMessage(errorText); }
+  };
+  const onCheckoutComplete = () => {
+    teardown(); showMessage(successText);
+    const deadline = Date.now() + 15000;
+    const finish = () => { modal.close(); location.reload(); };
+    const poll = async () => {
+      if (Date.now() >= deadline) return finish();
+      try { const response = await fetch(planStatusUrl); if (response.ok) { const me = await response.json(); if (me.plan !== currentPlan) return finish(); } } catch {}
+      setTimeout(poll, 1500);
+    };
+    setTimeout(poll, 1500);
+  };
+  const closeModal = () => { teardown(); modal.close(); };
+  openButton?.addEventListener('click', openCheckout);
+  closeButton?.addEventListener('click', closeModal);
+  modal?.addEventListener('cancel', teardown);
+</script>}

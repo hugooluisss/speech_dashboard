@@ -17,6 +17,7 @@ class Claims:
     subject_id: str
     plan: str
     admin: bool = False
+    email: str | None = None
 
 
 @lru_cache
@@ -31,7 +32,7 @@ def extract_claims(payload: dict) -> Claims:
     plan = next((role for role in roles if isinstance(role, str) and role.startswith("plan-")), None)
     if not subject_id or not plan:
         raise HTTPException(status_code=401, detail="Token is missing subject or plan")
-    return Claims(subject_id=subject_id, plan=plan, admin="admin" in roles)
+    return Claims(subject_id=subject_id, plan=plan, admin="admin" in roles, email=payload.get("email"))
 
 
 def validate_token(credentials: HTTPAuthorizationCredentials | None = Security(bearer), accept_language: str | None = Header(None, alias='Accept-Language')) -> Claims:

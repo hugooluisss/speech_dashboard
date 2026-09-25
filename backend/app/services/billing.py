@@ -31,12 +31,15 @@ class BillingService:
     def __init__(self, plans: PlanRepository, subscriptions: SubscriptionRepository, keycloak=None):
         self.plans, self.subscriptions, self.keycloak = plans, subscriptions, keycloak or KeycloakAdmin()
 
-    def create_checkout_session(self, user, plan_id: str, accept_language: str | None = None):
+    def create_checkout_session(self, user, plan_id: str, email: str | None = None, accept_language: str | None = None):
         plan = self.plans.get(plan_id)
         if not plan or not plan.active or not plan.stripe_price_id:
             raise HTTPException(status_code=400, detail=message('unknown_plan', accept_language))
-        stripe.api_key = get_settings().stripe_api_key
-        return stripe.checkout.Session.create(mode="subscription", line_items=[{"price": plan.stripe_price_id, "quantity": 1}], success_url="http://localhost:3000/billing/success", cancel_url="http://localhost:3000/billing/cancel", metadata={"subject_id": user.subject_id}, client_reference_id=user.subject_id)
+        settings = get_settings()
+        stripe.api_key = settings.stripe_api_key
+        subscription = self.subscriptions.get_by_subject(user.subject_id)
+        customer_kwargs = {"customer": subscription.stripe_customer_id} if subscription and subscription.stripe_customer_id else ({"customer_email": email} if email else {})
+        return stripe.checkout.Session.create(mode="subscription", ui_mode="embedded", line_items=[{"price": plan.stripe_price_id, "quantity": 1}], return_url=f"{settings.dashboard_url}/dashboard", metadata={"subject_id": user.subject_id}, client_reference_id=user.subject_id, **customer_kwargs)
 
     def create_portal_session(self, subject_id: str, accept_language: str | None = None):
         subscription = self.subscriptions.get_by_subject(subject_id)
@@ -85,5 +88,7 @@ class BillingService:
         plan = next((p for p in self.plans.list_active() if p.stripe_price_id == price_id), None) if active else self.plans.get("plan-free")
         if not plan:
             return
-        self.subscriptions.save(subject_id, obj.get("customer"), subscription_id, status, plan.tier_id)
+        current_period_end_ts = ((obj.get("items", {}).get("data") or [{}])[0]).get("current_period_end") if active else None
+        current_period_end = datetime.fromtimestamp(current_period_end_ts, timezone.utc) if current_period_end_ts else None
+        self.subscriptions.save(subject_id, obj.get("customer"), subscription_id, status, plan.tier_id, current_period_end)
         self.keycloak.set_plan(subject_id, plan.keycloak_role)

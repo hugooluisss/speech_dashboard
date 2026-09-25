@@ -1,10 +1,13 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { appPath } from './paths';
 
 export const issuer = import.meta.env.PUBLIC_KEYCLOAK_PUBLIC_ISSUER_URL || process.env.KEYCLOAK_PUBLIC_ISSUER_URL || process.env.KEYCLOAK_ISSUER_URL || 'http://localhost:8080/realms/speech';
-const serverIssuer = import.meta.env.PUBLIC_KEYCLOAK_ISSUER_URL || process.env.KEYCLOAK_ISSUER_URL || issuer;
+// Server-to-server token calls must use the internal Keycloak address. The
+// public issuer is for browser redirects and may sit behind a proxy or WAF.
+const serverIssuer = process.env.KEYCLOAK_ISSUER_URL || issuer;
 export const backend = process.env.BACKEND_URL || 'http://localhost:8000';
 const clientId = process.env.KEYCLOAK_WEB_CLIENT_ID || 'speech-dashboard-web';
-const redirectUri = process.env.DASHBOARD_URL ? `${process.env.DASHBOARD_URL}/auth/callback` : 'http://localhost:4321/auth/callback';
+const redirectUri = process.env.DASHBOARD_URL ? `${process.env.DASHBOARD_URL}/auth/callback` : `http://localhost:4321${appPath('auth/callback')}`;
 // Secure must reflect whether the dashboard is actually served over HTTPS, not
 // the build mode: `import.meta.env.PROD` is true for any production build,
 // including one served over plain HTTP in local/dev deployments, which would

@@ -1,0 +1,8 @@
+# Optional public-prefix settings. Merge with the development stack using:
+# docker compose -f docker-compose.dev.yml -f docker-compose.public.yml up
+services:
+  keycloak:
+    environment:
+      KC_HOSTNAME: ${KC_HOSTNAME:?Set KC_HOSTNAME for public mode}
+      KC_HTTP_RELATIVE_PATH: ${KC_HTTP_RELATIVE_PATH:?Set KC_HTTP_RELATIVE_PATH for public mode}
+      KC_PROXY_HEADERS: ${KC_PROXY_HEADERS:?Set KC_PROXY_HEADERS for public mode}

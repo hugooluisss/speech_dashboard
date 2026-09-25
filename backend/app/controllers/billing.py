@@ -16,7 +16,7 @@ router = APIRouter(prefix="/billing")
 def checkout(plan_id: str, accept_language: str | None = Header(None, alias='Accept-Language'), claims: Claims = Depends(validate_token)):
     with session_factory()() as session:
         user = session.get(User, claims.subject_id) or User(subject_id=claims.subject_id)
-        return {"url": BillingService(PlanRepository(session), SubscriptionRepository(session)).create_checkout_session(user, plan_id, accept_language).url}
+        return {"client_secret": BillingService(PlanRepository(session), SubscriptionRepository(session)).create_checkout_session(user, plan_id, claims.email, accept_language).client_secret}
 
 
 @router.post("/portal")

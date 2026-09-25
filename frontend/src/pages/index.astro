@@ -2,17 +2,19 @@
 import Layout from '../layouts/Layout.astro';
 import { resolveLocale } from '../i18n';
 import { landing } from '../i18n/landing';
+import { appPath } from '../lib/paths';
 
 const locale = resolveLocale(Astro.request);
 const t = landing[locale];
 const features = [['01', t.feature1Title, t.feature1Copy], ['02', t.feature2Title, t.feature2Copy], ['03', t.feature3Title, t.feature3Copy], ['04', t.feature4Title, t.feature4Copy], ['05', t.feature5Title, t.feature5Copy], ['06', t.feature6Title, t.feature6Copy]];
 
-const loginUrl = '/auth/login';
+const loginUrl = appPath('auth/login');
+const homeUrl = appPath('');
 ---
 
 <Layout>
   <header class="nav shell">
-    <a class="wordmark" href="/" aria-label="Speech home"><span class="mark">S</span> speech</a>
+    <a class="wordmark" href={homeUrl} aria-label="Speech home"><span class="mark">S</span> speech</a>
     <nav aria-label={t.mainNavigation}>
       <a href="#features">{t.features}</a>
       <a href="#pricing">{t.pricing}</a>
@@ -69,5 +71,5 @@ const loginUrl = '/auth/login';
     </section>
   </main>
 
-  <footer class="footer shell"><a class="wordmark" href="/" aria-label={t.home}><span class="mark">S</span> speech</a><p>{t.footerLead}</p><p>{t.copyright}</p></footer>
+  <footer class="footer shell"><a class="wordmark" href={homeUrl} aria-label={t.home}><span class="mark">S</span> speech</a><p>{t.footerLead}</p><p>{t.copyright}</p></footer>
 </Layout>

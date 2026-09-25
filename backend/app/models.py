@@ -34,6 +34,7 @@ class UserSubscription(Base):
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True)
     status: Mapped[str] = mapped_column(String(64), nullable=False)
     plan_tier_id: Mapped[str] = mapped_column(String(64), nullable=False, default="plan-free")
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 

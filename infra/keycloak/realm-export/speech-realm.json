@@ -150,10 +150,10 @@
       "bearerOnly": false,
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4321/##https://dashboard.speech.app/"
+        "post.logout.redirect.uris": "http://localhost:4321/##https://dashboard.speech.app/##https://agents-dev.hugosantiago.dev/speech-dashboard/"
       },
-      "redirectUris": ["http://localhost:4321/auth/callback", "https://dashboard.speech.app/auth/callback"],
-      "webOrigins": ["http://localhost:4321", "https://dashboard.speech.app"],
+      "redirectUris": ["http://localhost:4321/auth/callback", "https://dashboard.speech.app/auth/callback", "https://agents-dev.hugosantiago.dev/speech-dashboard/auth/callback"],
+      "webOrigins": ["http://localhost:4321", "https://dashboard.speech.app", "https://agents-dev.hugosantiago.dev"],
       "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email", "basic", "plan-roles"],
       "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     }
